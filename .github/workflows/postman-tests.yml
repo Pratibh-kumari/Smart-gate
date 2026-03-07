@@ -38,14 +38,14 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install backend dependencies
-        run: npm --prefix backend ci
+        run: npm ci
 
       - name: Start backend server
         run: |
-          nohup npm --prefix backend start > backend/server.log 2>&1 &
+          nohup npm start > server.log 2>&1 &
 
       - name: Wait for backend health
         run: |
@@ -61,11 +61,11 @@ jobs:
           exit 1
 
       - name: Run Postman tests (Newman)
-        run: npm --prefix backend run test:postman:cli
+        run: npm run test:postman:cli
 
       - name: Upload backend logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: backend-server-log
-          path: backend/server.log
+          path: server.log
