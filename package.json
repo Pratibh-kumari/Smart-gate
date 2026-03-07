@@ -1,28 +1,17 @@
 {
-  "name": "backend",
+  "name": "smart-gate",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Smart Gate Visitor Management System - Monorepo",
+  "private": true,
   "scripts": {
-    "start": "node scr/server.js",
-    "test:postman": "newman run postman/SmartGate.postman_collection.json -e postman/SmartGate.local.postman_environment.json --color on",
-    "test:postman:cli": "newman run postman/SmartGate.postman_collection.json -e postman/SmartGate.local.postman_environment.json --reporters cli"
+    "backend:install": "cd backend && npm install",
+    "backend:start": "cd backend && npm start",
+    "backend:test": "cd backend && npm run test:postman:cli",
+    "frontend:install": "cd frontend && npm install",
+    "frontend:start": "cd frontend && npm start",
+    "install:all": "npm run backend:install && npm run frontend:install"
   },
-  "keywords": [],
+  "keywords": ["visitor-management", "smart-gate", "security"],
   "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.6",
-    "dotenv": "^17.2.4",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.2.1",
-    "qrcode": "^1.5.4",
-    "twilio": "^5.12.1"
-  },
-  "devDependencies": {
-    "newman": "^6.2.1"
-  }
+  "license": "ISC"
 }
