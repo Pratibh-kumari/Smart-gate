@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Host Portal - Smart Gate</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="portal-container">
+        <!-- Header -->
+        <header class="portal-header">
+            <div class="brand-wrap">
+                <img src="./assets/rru-logo.png" alt="RRU Logo" class="logo">
+                <div>
+                    <h1>Host Portal</h1>
+                    <p class="subtitle">Visitor Approval & Management</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span id="hostName" class="user-badge">Guest</span>
+                <button id="logoutBtn" class="btn btn-secondary" style="display:none;">Logout</button>
+                <a href="landing.html" class="btn-back">← Home</a>
+            </div>
+        </header>
+
+        <main class="portal-main">
+            <!-- Login Section -->
+            <section class="card-section active" id="login-section">
+                <div class="card card-narrow">
+                    <h2>Host Login</h2>
+                    <p class="section-desc">Login to access the host dashboard</p>
+                    
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="email">Email *</label>
+                            <input type="email" id="email" placeholder="your.email@rru.ac.in" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password">Password *</label>
+                            <input type="password" id="password" placeholder="Enter your password" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-large">Login</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Host Dashboard -->
+            <section class="card-section" id="dashboard-section">
+                <!-- Live Metrics -->
+                <div class="metrics-bar">
+                    <div class="metric-item">
+                        <span class="metric-label">Pending Approvals</span>
+                        <span id="pendingCount" class="metric-value">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Approved Today</span>
+                        <span id="approvedCount" class="metric-value">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Last Updated</span>
+                        <span id="lastSync" class="metric-value">Never</span>
+                    </div>
+                    <div class="metric-actions">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="autoRefresh" checked>
+                            Auto-refresh
+                        </label>
+                        <button id="refreshBtn" class="btn btn-small">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Pending Approvals Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Pending Visitor Approvals</h2>
+                        <div class="table-filters">
+                            <input type="text" id="searchInput" placeholder="Search by name, phone, or purpose..." class="search-input">
+                            <select id="statusFilter" class="filter-select">
+                                <option value="all">All Status</option>
+                                <option value="pending" selected>Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="visitorsTable" class="table-container">
+                        <p class="empty-state">No pending approvals</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Status Messages -->
+            <div id="statusBox" class="status-box"></div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="portal-footer">
+            <p>© 2026 Rashtriya Raksha University</p>
+        </footer>
+    </div>
+
+    <script src="host.js"></script>
+</body>
+</html>

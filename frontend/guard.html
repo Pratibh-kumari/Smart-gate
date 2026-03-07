@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guard Portal - Smart Gate</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="portal-container">
+        <!-- Header -->
+        <header class="portal-header">
+            <div class="brand-wrap">
+                <img src="./assets/rru-logo.png" alt="RRU Logo" class="logo">
+                <div>
+                    <h1>Guard Portal</h1>
+                    <p class="subtitle">Visitor Check-in & Check-out</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span id="guardName" class="user-badge">Guest</span>
+                <button id="logoutBtn" class="btn btn-secondary" style="display:none;">Logout</button>
+                <a href="landing.html" class="btn-back">← Home</a>
+            </div>
+        </header>
+
+        <main class="portal-main">
+            <!-- Login Section -->
+            <section class="card-section active" id="login-section">
+                <div class="card card-narrow">
+                    <h2>Guard Login</h2>
+                    <p class="section-desc">Login to access the guard dashboard</p>
+                    
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="email">Email *</label>
+                            <input type="email" id="email" placeholder="your.email@rru.ac.in" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password">Password *</label>
+                            <input type="password" id="password" placeholder="Enter your password" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-large">Login</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Guard Dashboard -->
+            <section class="card-section" id="dashboard-section">
+                <!-- Live Metrics -->
+                <div class="metrics-bar">
+                    <div class="metric-item">
+                        <span class="metric-label">Active Visitors</span>
+                        <span id="activeCount" class="metric-value">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Today's Check-ins</span>
+                        <span id="todayCount" class="metric-value">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Last Updated</span>
+                        <span id="lastSync" class="metric-value">Never</span>
+                    </div>
+                    <div class="metric-actions">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="autoRefresh" checked>
+                            Auto-refresh
+                        </label>
+                        <button id="refreshBtn" class="btn btn-small">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Check-in Form -->
+                <div class="card">
+                    <h2>Visitor Check-In</h2>
+                    <p class="section-desc">Scan QR code or enter visitor phone number</p>
+                    
+                    <form id="checkInForm">
+                        <div class="form-group">
+                            <label for="checkInPhone">Visitor Phone Number *</label>
+                            <input type="tel" id="checkInPhone" placeholder="Enter approved visitor's phone" maxlength="10" required>
+                            <small>Only approved visitors can check-in</small>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success btn-large">✓ Check In Visitor</button>
+                    </form>
+                </div>
+
+                <!-- Active Visitors Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Active Visitors</h2>
+                        <div class="table-filters">
+                            <input type="text" id="searchInput" placeholder="Search by name, phone, or host..." class="search-input">
+                            <select id="statusFilter" class="filter-select">
+                                <option value="all">All Status</option>
+                                <option value="checked-in" selected>Checked In</option>
+                                <option value="checked-out">Checked Out</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="visitorsTable" class="table-container">
+                        <p class="empty-state">No active visitors</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Status Messages -->
+            <div id="statusBox" class="status-box"></div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="portal-footer">
+            <p>© 2026 Rashtriya Raksha University</p>
+        </footer>
+    </div>
+
+    <script src="guard.js"></script>
+</body>
+</html>

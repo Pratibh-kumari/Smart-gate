@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Gate - RRU Project Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand-wrap">
+        <img id="rruLogo" src="./assets/rru-logo.png" alt="RRU Logo" class="logo" />
+        <div>
+          <h1>Smart Gate Visitor Management</h1>
+          <p class="subtitle">Rashtriya Raksha University - Student Project Demo</p>
+        </div>
+      </div>
+      <div class="server-config">
+        <label for="apiBase">API Base</label>
+        <input id="apiBase" type="text" value="http://localhost:5000/api" />
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel nav-panel">
+        <h2>Modules</h2>
+        <div class="tab-row">
+          <button class="tab-btn active" data-tab="visitor">Visitor Register</button>
+          <button class="tab-btn" data-tab="otp">OTP Verify</button>
+          <button class="tab-btn" data-tab="login">Staff Login</button>
+          <button class="tab-btn" data-tab="host">Host Panel</button>
+          <button class="tab-btn" data-tab="guard">Guard Panel</button>
+        </div>
+      </section>
+
+      <section class="panel metrics-panel">
+        <h3>Live Dashboard</h3>
+        <div class="metrics-grid">
+          <article class="metric-card">
+            <p class="metric-label">Pending Approvals</p>
+            <p id="metricPending" class="metric-value">-</p>
+          </article>
+          <article class="metric-card">
+            <p class="metric-label">Active Visitors</p>
+            <p id="metricActive" class="metric-value">-</p>
+          </article>
+          <article class="metric-card">
+            <p class="metric-label">Current Role</p>
+            <p id="metricRole" class="metric-value">Guest</p>
+          </article>
+          <article class="metric-card">
+            <p class="metric-label">Last Sync</p>
+            <p id="metricSync" class="metric-value">Never</p>
+          </article>
+        </div>
+        <div class="inline-actions">
+          <button id="refreshAllBtn" type="button">Refresh Live Data</button>
+          <label class="control-toggle" for="autoRefreshToggle">
+            <input id="autoRefreshToggle" type="checkbox" />
+            Auto refresh every 20s
+          </label>
+        </div>
+      </section>
+
+      <section class="panel tab-content active" id="tab-visitor">
+        <h3>Visitor Registration</h3>
+        <form id="registerVisitorForm" class="grid-form">
+          <label>Name
+            <input name="name" required placeholder="Visitor full name" />
+          </label>
+          <label>Phone
+            <input name="phone" required placeholder="10-digit phone" />
+          </label>
+          <label>Host
+            <input name="host" required placeholder="Host name or host email" />
+          </label>
+          <label>Purpose
+            <input name="purpose" required placeholder="Meeting / Interview / Delivery" />
+          </label>
+          <button type="submit">Register Visitor</button>
+        </form>
+      </section>
+
+      <section class="panel tab-content" id="tab-otp">
+        <h3>OTP Verification</h3>
+        <div class="inline-actions">
+          <button id="sendOtpBtn" type="button">Send OTP</button>
+        </div>
+        <form id="verifyOtpForm" class="grid-form">
+          <label>Visitor ID
+            <input id="otpVisitorId" name="visitorId" required placeholder="Auto-filled after registration" />
+          </label>
+          <label>OTP
+            <input name="otp" required placeholder="Enter OTP" />
+          </label>
+          <button type="submit">Verify OTP</button>
+        </form>
+      </section>
+
+      <section class="panel tab-content" id="tab-login">
+        <h3>Staff Login (Host / Guard)</h3>
+        <form id="staffLoginForm" class="grid-form">
+          <label>Email
+            <input type="email" name="email" required placeholder="staff email" />
+          </label>
+          <label>Password
+            <input type="password" name="password" required placeholder="password" />
+          </label>
+          <button type="submit">Login</button>
+        </form>
+        <div class="token-box">
+          <p><strong>Logged in role:</strong> <span id="currentRole">Not logged in</span></p>
+          <button id="logoutBtn" type="button" class="danger">Logout</button>
+        </div>
+      </section>
+
+      <section class="panel tab-content" id="tab-host">
+        <h3>Host Panel - Pending Visitor Approvals</h3>
+        <div class="inline-actions">
+          <button id="loadPendingBtn" type="button">Load Pending Visitors</button>
+          <input id="hostSearchInput" type="text" placeholder="Search name / phone / host / purpose" />
+          <select id="hostStatusFilter">
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="checked-in">Checked-In</option>
+            <option value="checked-out">Checked-Out</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Host</th>
+                <th>Purpose</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="pendingTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel tab-content" id="tab-guard">
+        <h3>Guard Panel - Check-In / Check-Out</h3>
+        <form id="checkInForm" class="inline-form">
+          <input name="visitorId" required placeholder="Visitor ID to check-in" />
+          <button type="submit">Check-In</button>
+        </form>
+        <div class="inline-actions">
+          <button id="loadActiveBtn" type="button">Load Active Visitors</button>
+          <input id="guardSearchInput" type="text" placeholder="Search name / phone / status" />
+          <select id="guardStatusFilter">
+            <option value="all">All Status</option>
+            <option value="checked-in">Checked-In</option>
+            <option value="approved">Approved</option>
+            <option value="checked-out">Checked-Out</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Check-In Time</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="activeTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel status-panel">
+        <h3>System Status</h3>
+        <div id="statusBox" class="status-box">Ready</div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Theme: White + Navy Blue | Academic Demo for RRU</p>
+    </footer>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
