@@ -16,9 +16,11 @@ mongoose
   .catch((err) => console.log(err));
 
 // IMPORT ROUTES
+const authRoutes = require("./routes/authRoutes");
 const visitorRoutes = require("./routes/visitorRoutes");
 
 // USE ROUTES
+app.use("/api/auth", authRoutes);
 app.use("/api/visitors", visitorRoutes);
 
 // Test route
