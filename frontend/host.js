@@ -239,7 +239,7 @@ async function approveVisitor(visitorId, validityHours) {
     
     try {
         showStatus('Approving visitor...', 'info');
-        await apiRequest(`/visitors/approve/${visitorId}`, 'PUT', { validityHours }, true);
+        await apiRequest('/visitors/approve', 'POST', { visitorId, validityHours }, true);
         
         showStatus(`✓ Visitor approved for ${validityHours} hours`, 'success');
         loadVisitors();

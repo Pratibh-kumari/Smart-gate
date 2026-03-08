@@ -4,6 +4,7 @@ let authToken = localStorage.getItem('guard_token');
 let guardInfo = JSON.parse(localStorage.getItem('guard_info') || '{}');
 let refreshTimer = null;
 let visitorsData = [];
+let approvedVisitorsData = [];
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -160,10 +161,17 @@ async function loadVisitors(silent = false) {
     try {
         if (!silent) showStatus('Loading visitors...', 'info');
         
-        const result = await apiRequest('/visitors/active', 'GET', null, true);
-        visitorsData = result.visitors || [];
+        // Load both approved and active visitors
+        const [approvedResult, activeResult] = await Promise.all([
+            apiRequest('/visitors/approved', 'GET', null, true),
+            apiRequest('/visitors/active', 'GET', null, true)
+        ]);
+        
+        approvedVisitorsData = approvedResult.visitors || [];
+        visitorsData = activeResult.visitors || [];
         
         updateMetrics();
+        renderApprovedVisitors();
         renderVisitors();
         
         if (!silent) showStatus('✓ Visitors loaded', 'success');
@@ -175,13 +183,15 @@ async function loadVisitors(silent = false) {
 
 // Update Metrics
 function updateMetrics() {
+    const approvedVisitors = approvedVisitorsData.length;
     const activeVisitors = visitorsData.filter(v => v.status === 'checked-in');
     const todayVisitors = visitorsData.filter(v => {
         const checkIn = new Date(v.checkInTime);
         const today = new Date();
         return checkIn.toDateString() === today.toDateString();
     });
-    
+
+    document.getElementById('approvedCount').textContent = approvedVisitors;
     document.getElementById('activeCount').textContent = activeVisitors.length;
     document.getElementById('todayCount').textContent = todayVisitors.length;
     document.getElementById('lastSync').textContent = new Date().toLocaleTimeString();
@@ -250,6 +260,77 @@ function renderVisitors() {
     container.innerHTML = table;
 }
 
+// Render Approved Visitors Table (NEW)
+function renderApprovedVisitors() {
+    const searchTerm = document.getElementById('searchApprovedInput').value.toLowerCase();
+    
+    let filtered = approvedVisitorsData;
+    
+    // Apply search filter
+    if (searchTerm) {
+        filtered = filtered.filter(v => 
+            v.name.toLowerCase().includes(searchTerm) ||
+            v.phone.includes(searchTerm) ||
+            v.host.toLowerCase().includes(searchTerm) ||
+            v.purpose.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    const container = document.getElementById('approvedVisitorsTable');
+    
+    if (filtered.length === 0) {
+        container.innerHTML = '<p class="empty-state">No approved visitors waiting for check-in</p>';
+        return;
+    }
+    
+    const table = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Host</th>
+                    <th>Purpose</th>
+                    <th>Approved At</th>
+                    <th>Valid Until</th>
+                    <th>Quick Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${filtered.map(visitor => `
+                    <tr>
+                        <td><strong>${visitor.name}</strong></td>
+                        <td>${visitor.phone}</td>
+                        <td>${visitor.host}</td>
+                        <td>${visitor.purpose}</td>
+                        <td>${visitor.approvedAt ? new Date(visitor.approvedAt).toLocaleString() : '-'}</td>
+                        <td>${visitor.validUntil ? new Date(visitor.validUntil).toLocaleString() : '-'}</td>
+                        <td>
+                            <button class="btn btn-success btn-small" onclick="quickCheckIn('${visitor.phone}')">✓ Check In</button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+    
+    container.innerHTML = table;
+}
+
+// Quick Check-In from approved visitors table
+async function quickCheckIn(phone) {
+    try {
+        showStatus('Checking in visitor...', 'info');
+        const result = await apiRequest('/visitors/check-in', 'POST', { phone }, true);
+        
+        showStatus(`✓ Check-in successful: ${result.visitor.name}`, 'success');
+        loadVisitors();
+        
+    } catch (error) {
+        showStatus(`✗ Check-in failed: ${error.message}`, 'error');
+    }
+}
+
 // Check-Out Visitor
 async function checkOutVisitor(visitorId) {
     if (!confirm('Are you sure you want to check out this visitor?')) {
@@ -258,7 +339,7 @@ async function checkOutVisitor(visitorId) {
     
     try {
         showStatus('Checking out visitor...', 'info');
-        await apiRequest(`/visitors/check-out/${visitorId}`, 'PUT', null, true);
+        await apiRequest('/visitors/check-out', 'POST', { visitorId }, true);
         
         showStatus('✓ Check-out successful', 'success');
         loadVisitors();
@@ -270,6 +351,7 @@ async function checkOutVisitor(visitorId) {
 
 // Search and Filter
 document.getElementById('searchInput').addEventListener('input', renderVisitors);
+document.getElementById('searchApprovedInput').addEventListener('input', renderApprovedVisitors);
 document.getElementById('statusFilter').addEventListener('change', renderVisitors);
 
 // Refresh Button

@@ -121,7 +121,7 @@ exports.verifyOtp = async (req, res) => {
 exports.getPendingVisitors = async (req, res) => {
   try {
     const visitors = await Visitor.find({ status: "pending" }).sort({ createdAt: -1 });
-    res.json(visitors);
+    res.json({ visitors });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -160,11 +160,18 @@ exports.approveVisitor = async (req, res) => {
 // Check-in visitor (guard)
 exports.checkInVisitor = async (req, res) => {
   try {
-    const { visitorId } = req.body;
+    const { visitorId, phone } = req.body;
 
-    const visitor = await Visitor.findById(visitorId);
+    // Support both visitorId and phone number
+    let visitor;
+    if (visitorId) {
+      visitor = await Visitor.findById(visitorId);
+    } else if (phone) {
+      visitor = await Visitor.findOne({ phone, status: "approved" }).sort({ approvedAt: -1 });
+    }
+
     if (!visitor) {
-      return res.status(404).json({ message: "Visitor not found" });
+      return res.status(404).json({ message: "Visitor not found or not approved" });
     }
 
     if (visitor.status !== "approved") {
@@ -184,11 +191,21 @@ exports.checkInVisitor = async (req, res) => {
   }
 };
 
+// Get approved visitors waiting for check-in (guard)
+exports.getApprovedVisitors = async (req, res) => {
+  try {
+    const visitors = await Visitor.find({ status: "approved" }).sort({ approvedAt: -1 });
+    res.json({ visitors });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Get active visitors (guard)
 exports.getActiveVisitors = async (req, res) => {
   try {
     const visitors = await Visitor.find({ status: "checked-in" }).sort({ checkInTime: -1 });
-    res.json(visitors);
+    res.json({ visitors });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

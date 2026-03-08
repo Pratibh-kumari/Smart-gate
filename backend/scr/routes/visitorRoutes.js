@@ -11,6 +11,7 @@ const {
   getPendingVisitors,
   approveVisitor,
   checkInVisitor,
+  getApprovedVisitors,
   getActiveVisitors,
   checkOutVisitor
 } = require("../controllers/visitorController");
@@ -23,6 +24,7 @@ router.post("/verify-otp", verifyOtp);
 // Protected routes (require authentication)
 router.get("/pending", authenticate, getPendingVisitors);
 router.post("/approve", authenticate, approveVisitor);
+router.get("/approved", authenticate, getApprovedVisitors);
 router.post("/check-in", authenticate, checkInVisitor);
 router.get("/active", authenticate, getActiveVisitors);
 router.post("/check-out", authenticate, checkOutVisitor);

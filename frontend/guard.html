@@ -52,6 +52,10 @@
                 <!-- Live Metrics -->
                 <div class="metrics-bar">
                     <div class="metric-item">
+                        <span class="metric-label">Approved (Waiting)</span>
+                        <span id="approvedCount" class="metric-value">0</span>
+                    </div>
+                    <div class="metric-item">
                         <span class="metric-label">Active Visitors</span>
                         <span id="activeCount" class="metric-value">0</span>
                     </div>
@@ -86,6 +90,20 @@
                         
                         <button type="submit" class="btn btn-success btn-large">✓ Check In Visitor</button>
                     </form>
+                </div>
+
+                <!-- Approved Visitors Waiting Table (NEW) -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>✅ Approved Visitors (Waiting for Check-In)</h2>
+                        <div class="table-filters">
+                            <input type="text" id="searchApprovedInput" placeholder="Search approved visitors..." class="search-input">
+                        </div>
+                    </div>
+                    
+                    <div id="approvedVisitorsTable" class="table-container">
+                        <p class="empty-state">No approved visitors waiting</p>
+                    </div>
                 </div>
 
                 <!-- Active Visitors Table -->
