@@ -175,16 +175,25 @@ Frontend runs on `http://localhost:5500`
 
 ---
 
-## 🔑 Authentication
+## 🔑 Authentication & Credentials
 
-### Host & Guard Login
-Authentication is handled via **Firebase Authentication**:
-1. Register at `/host-register.html` or `/guard-register.html`
-2. Verify email via link sent to your inbox
-3. Login at `/host-login.html` or `/guard-login.html`
+### Host & Guard Login (Firebase Authentication)
+Authentication is handled via **Firebase Authentication** - no hardcoded passwords!
 
-### Visitor OTP
-Visitors receive **real SMS OTP** via Twilio to their registered phone number.
+**How to access:**
+1. **Register**: Go to `/host-register.html` or `/guard-register.html`
+2. **Verify Email**: Check your inbox and click the verification link
+3. **Login**: Use your registered email/password at `/host-login.html` or `/guard-login.html`
+
+> **Note:** Each user creates their own account. There are no default credentials.
+
+### Visitor OTP (Twilio Verify)
+Visitors receive **real SMS OTP** via Twilio to their registered phone number (+91 India format).
+
+**How it works:**
+1. Visitor enters 10-digit phone number
+2. Twilio sends 6-digit OTP via SMS
+3. Visitor enters OTP to verify identity
 
 ---
 
