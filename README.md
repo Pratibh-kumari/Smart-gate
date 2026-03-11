@@ -369,11 +369,10 @@ This project is open source and available under the MIT License.
 
 ---
 
-## 👥 Project Team
+## 👥 Developer
 
-**Software Engineering Semester Project - RRU**
-- **Pratibha**: Full-Stack Development Lead
-- **Riya**: QA & Documentation (Product Owner)
+**Made by Rashtriya Raksha University (RRU) Student**
+- **Pratibha** - Full-Stack Developer
 
 ---
 
