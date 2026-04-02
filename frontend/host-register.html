@@ -7,93 +7,62 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="portal-container">
+    <div class="portal-wrapper">
         <!-- Header -->
         <header class="portal-header">
             <div class="brand-wrap">
                 <img src="./assets/rru-logo.png" alt="RRU Logo" class="logo">
                 <div class="header-text">
-                    <h1>Host Registration</h1>
+                    <h1>Host Portal</h1>
                     <p class="subtitle">Smart Gate Management System</p>
                 </div>
             </div>
-            <a href="host-login.html" class="btn-back">← Back to Login</a>
-        </header>
+            <a href="landing.html" class="btn-back">← Back to Home</a>
         </header>
 
         <main class="portal-main">
-            <div class="register-container">
+            <div class="login-container">
+                <h2>Host Registration</h2>
                 <form id="hostRegisterForm">
-            <div class="form-group">
-                <label for="name">Full Name *</label>
-                <input 
-                    type="text" 
-                    id="name" 
-                    placeholder="Your full name" 
-                    required
-                    autocomplete="name"
-                >
+                    <div class="form-group">
+                        <label for="name">Full Name *</label>
+                        <input type="text" id="name" placeholder="Your full name" required autocomplete="name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" placeholder="your.email@rru.ac.in" required autocomplete="email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" placeholder="10-digit mobile number" maxlength="10" autocomplete="tel">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password *</label>
+                        <input type="password" id="password" placeholder="Create a strong password (min 6 characters)" required autocomplete="new-password">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password *</label>
+                        <input type="password" id="confirmPassword" placeholder="Confirm your password" required autocomplete="new-password">
+                    </div>
+                    
+                    <div class="note" style="margin-bottom: 1.5rem; font-size: 0.85rem; color: #666;">
+                        ℹ️ You will need to verify your email before you can log in.
+                    </div>
+                    
+                    <button type="submit" class="btn">Register as Host</button>
+                </form>
+                
+                <div id="statusMessage" class="status-message"></div>
+                
+                <div class="footer-links" style="margin-top: 1.5rem; text-align: center; border-top: 1px solid #eee; padding-top: 1rem;">
+                    <p>Already have an account? <a href="host-login.html" style="color: var(--navy); text-decoration: none; font-weight: 600;">Login here</a></p>
+                </div>
             </div>
-            
-            <div class="form-group">
-                <label for="email">Email Address *</label>
-                <input 
-                    type="email" 
-                    id="email" 
-                    placeholder="your.email@rru.ac.in" 
-                    required
-                    autocomplete="email"
-                >
-            </div>
-            
-            <div class="form-group">
-                <label for="phone">Phone Number</label>
-                <input 
-                    type="tel" 
-                    id="phone" 
-                    placeholder="10-digit mobile number" 
-                    maxlength="10"
-                    autocomplete="tel"
-                >
-            </div>
-            
-            <div class="form-group">
-                <label for="password">Password *</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    placeholder="Create a strong password (min 6 characters)" 
-                    required
-                    autocomplete="new-password"
-                >
-            </div>
-            
-            <div class="form-group">
-                <label for="confirmPassword">Confirm Password *</label>
-                <input 
-                    type="password" 
-                    id="confirmPassword" 
-                    placeholder="Confirm your password" 
-                    required
-                    autocomplete="new-password"
-                >
-            </div>
-            
-            <div class="note">
-                ℹ️ You will need to verify your email before you can log in.
-            </div>
-            
-            <button type="submit" class="btn">Register as Host</button>
-        </form>
-        
-        <div id="statusMessage" class="status-message"></div>
-        
-        <div class="back-link">
-            <a href="host-login.html">Already have an account? Login here</a>
-        </div>
-        <div class="back-link">
-            <a href="landing.html">← Back to Home</a>
-        </div>
+        </main>
     </div>
 
     <script src="firebase-auth.js?v=3"></script>
