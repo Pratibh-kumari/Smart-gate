@@ -21,8 +21,7 @@
         </header>
 
         <div style="display:none;">
-            <input id="apiBase" value="http://localhost:5000/api" />
-            <div id="statusBox"></div>
+            <input id="apiBase" value="" />
         </div>
 
         <main class="portal-main">
@@ -41,12 +40,14 @@
                         <div class="form-group">
                             <label for="phone">Phone Number *</label>
                             <input type="tel" id="phone" placeholder="10-digit mobile number" maxlength="10" required autocomplete="tel">
+                            <small id="phoneError" class="field-error" style="display:none;">Enter a valid 10-digit phone number</small>
                             <small>OTP will be sent to this number</small>
                         </div>
                         
                         <div class="form-group">
                             <label for="email">Email Address (Optional)</label>
                             <input type="email" id="email" placeholder="your.email@example.com" autocomplete="email">
+                            <small id="emailError" class="field-error" style="display:none;">Enter a valid email address</small>
                             <small>Optional: Receive QR code via email when approved</small>
                         </div>
                         
@@ -66,6 +67,9 @@
                     <div class="section-footer">
                         Already registered? <a href="#" id="showOtpSection">Verify OTP</a>
                     </div>
+                    <div class="section-footer" style="margin-top: 8px;">
+                        We save your email and phone on this device for faster future registration.
+                    </div>
                 </div>
             </section>
 
@@ -79,6 +83,7 @@
                         <div class="form-group">
                             <label for="otpPhone">Phone Number *</label>
                             <input type="tel" id="otpPhone" placeholder="Your registered phone number" maxlength="10" required autocomplete="tel">
+                            <small id="otpPhoneError" class="field-error" style="display:none;">Enter a valid 10-digit phone number</small>
                         </div>
                         
                         <div class="form-group">
@@ -96,6 +101,32 @@
                 </div>
             </section>
 
+            <!-- Visitor QR Section -->
+            <section class="card-section" id="qr-section">
+                <div class="card qr-card">
+                    <h2>Your Entry QR Code</h2>
+                    <p class="section-desc" id="qrStatusMessage">Checking approval status...</p>
+
+                    <div id="qrPendingBox" class="qr-pending-box">
+                        <p>Your request is pending host approval.</p>
+                        <p>Keep this page open. The QR will appear automatically after approval.</p>
+                    </div>
+
+                    <div id="qrDisplayBox" class="qr-display-box" style="display:none;">
+                        <img id="visitorQrImage" class="visitor-qr-image" alt="Visitor entry QR code" />
+                        <p class="qr-instruction">Show this QR at entry gate</p>
+                    </div>
+
+                    <div class="section-footer">
+                        <a href="#" id="refreshQrLink">Refresh QR status</a>
+                    </div>
+
+                    <div class="section-footer" style="margin-top: 10px;">
+                        <a href="#" id="backToRegisterLink">Back to Registration</a>
+                    </div>
+                </div>
+            </section>
+
             <!-- Status Messages -->
             <div id="statusBox" class="status-box"></div>
         </main>
@@ -106,7 +137,6 @@
         </footer>
     </div>
 
-    <script src="script.js"></script>
-    <script src="visitor.js"></script>
+    <script src="visitor.js?v=2"></script>
 </body>
 </html>

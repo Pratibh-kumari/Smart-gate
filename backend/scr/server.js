@@ -19,11 +19,20 @@ mongoose
 const authRoutes = require("./routes/authRoutes");
 const visitorRoutes = require("./routes/visitorRoutes");
 const firebaseAuthRoutes = require("./routes/firebaseAuthRoutes");
+const { authenticate } = require("./middleware/authMiddleware");
+const {
+  approveVisitor,
+  getVisitorQr,
+  scanQr,
+} = require("./controllers/visitorController");
 
 // USE ROUTES
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", firebaseAuthRoutes);
 app.use("/api/visitors", visitorRoutes);
+app.put("/api/approve/:id", authenticate, approveVisitor);
+app.get("/api/visitor/:id/qr", getVisitorQr);
+app.post("/api/scan-qr", scanQr);
 
 // Test route
 app.get("/", (req, res) => {

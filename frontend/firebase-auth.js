@@ -1,7 +1,14 @@
 // Firebase Authentication Helper (Client-side)
 // Note: firebaseConfig is available in firebase-config.js if needed
 
-const API_BASE = 'http://localhost:5000/api';
+const queryApiBase = new URLSearchParams(window.location.search).get('apiBase');
+const storedApiBase = localStorage.getItem('smartGateApiBase');
+const defaultApiBase = `${window.location.protocol}//${window.location.hostname}:5000/api`;
+const API_BASE = (queryApiBase || storedApiBase || defaultApiBase).replace(/\/$/, '');
+
+if (queryApiBase) {
+  localStorage.setItem('smartGateApiBase', API_BASE);
+}
 
 /**
  * Firebase Authentication Helper Functions

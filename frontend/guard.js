@@ -11,6 +11,14 @@ let guardInfo = localStorage.getItem('userRole') ? {
 let refreshTimer = null;
 let visitorsData = [];
 let approvedVisitorsData = [];
+let guardSummary = {
+    approvedByHost: 0,
+    activeVisitors: 0,
+    todaysCheckIns: 0,
+    todaysCheckOuts: 0,
+};
+let qrScanner = null;
+let qrScannerRunning = false;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -21,6 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         showLogin();
     }
+
+    setupQrScannerControls();
 });
 
 // Show/hide sections
@@ -150,6 +160,8 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 document.getElementById('logoutBtn').addEventListener('click', logout);
 
 function logout() {
+    stopQrScanner(true);
+
     authToken = null;
     guardInfo = {};
     // Clear old tokens
@@ -169,44 +181,135 @@ function logout() {
     setTimeout(showLogin, 1000);
 }
 
-// Check-In Form
-document.getElementById('checkInForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const phone = document.getElementById('checkInPhone').value.trim();
-    
-    if (!/^\d{10}$/.test(phone)) {
-        showStatus('Please enter a valid 10-digit phone number', 'error');
+function setupQrScannerControls() {
+    const scanBtn = document.getElementById('scanQrBtn');
+    const closeBtn = document.getElementById('closeQrScannerBtn');
+    const stopBtn = document.getElementById('stopQrScannerBtn');
+    const modal = document.getElementById('qrScannerModal');
+
+    if (scanBtn) {
+        scanBtn.addEventListener('click', openQrScannerModal);
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => stopQrScanner(true));
+    }
+
+    if (stopBtn) {
+        stopBtn.addEventListener('click', () => stopQrScanner(false));
+    }
+
+    if (modal) {
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                stopQrScanner(true);
+            }
+        });
+    }
+}
+
+function setQrScanMessage(message, type = 'info') {
+    const messageNode = document.getElementById('qrScanMessage');
+    if (!messageNode) return;
+
+    messageNode.textContent = message;
+    messageNode.className = `section-desc qr-scan-message ${type}`;
+}
+
+async function openQrScannerModal() {
+    const modal = document.getElementById('qrScannerModal');
+    if (!modal) return;
+
+    if (typeof Html5Qrcode === 'undefined') {
+        showStatus('QR scanner library failed to load. Refresh and try again.', 'error');
         return;
     }
-    
+
+    modal.style.display = 'flex';
+    setQrScanMessage('Starting camera...');
+
     try {
-        showStatus('Checking in visitor...', 'info');
-        const result = await apiRequest('/visitors/check-in', 'POST', { phone }, true);
-        
-        showStatus(`✓ Check-in successful: ${result.visitor.name}`, 'success');
-        document.getElementById('checkInPhone').value = '';
-        
-        loadVisitors();
-        
+        if (!qrScanner) {
+            qrScanner = new Html5Qrcode('qrReader');
+        }
+
+        if (qrScannerRunning) {
+            return;
+        }
+
+        await qrScanner.start(
+            { facingMode: 'environment' },
+            {
+                fps: 10,
+                qrbox: { width: 240, height: 240 },
+                aspectRatio: 1,
+            },
+            onQrScanSuccess,
+            () => {}
+        );
+
+        qrScannerRunning = true;
+        setQrScanMessage('Point the camera at the visitor QR code.');
     } catch (error) {
-        showStatus(`✗ Check-in failed: ${error.message}`, 'error');
+        modal.style.display = 'none';
+        showStatus(`Unable to open camera: ${error.message}`, 'error');
     }
-});
+}
+
+async function stopQrScanner(closeModal = false) {
+    const modal = document.getElementById('qrScannerModal');
+
+    if (qrScanner && qrScannerRunning) {
+        try {
+            await qrScanner.stop();
+            await qrScanner.clear();
+        } catch (error) {
+            console.error('Failed to stop QR scanner:', error);
+        }
+    }
+
+    qrScannerRunning = false;
+
+    if (closeModal && modal) {
+        modal.style.display = 'none';
+    }
+}
+
+async function onQrScanSuccess(decodedText) {
+    if (!decodedText) {
+        return;
+    }
+
+    const qrToken = decodedText.trim();
+    setQrScanMessage('QR detected. Validating token...');
+
+    await stopQrScanner(true);
+
+    try {
+        const result = await apiRequest('/scan-qr', 'POST', { qrToken });
+        showStatus(`✓ Check-in Successful: ${result.message || 'Access Granted'}`, 'success');
+        loadVisitors();
+    } catch (error) {
+        const denied = (error.message || '').toLowerCase().includes('denied');
+        showStatus(denied ? '✗ Invalid or Already Used QR' : `✗ QR scan failed: ${error.message}`, 'error');
+    }
+}
 
 // Load Visitors
 async function loadVisitors(silent = false) {
     try {
         if (!silent) showStatus('Loading visitors...', 'info');
         
-        // Load both approved and active visitors
-        const [approvedResult, activeResult] = await Promise.all([
+        // Load approved, active and summary metrics
+        const [approvedResult, activeResult, summaryResult] = await Promise.all([
             apiRequest('/visitors/approved', 'GET', null, true),
-            apiRequest('/visitors/active', 'GET', null, true)
+            apiRequest('/visitors/active', 'GET', null, true),
+            apiRequest('/visitors/guard-summary', 'GET', null, true)
         ]);
         
         approvedVisitorsData = approvedResult.visitors || [];
         visitorsData = activeResult.visitors || [];
+        guardSummary = summaryResult || guardSummary;
         
         updateMetrics();
         renderApprovedVisitors();
@@ -221,17 +324,10 @@ async function loadVisitors(silent = false) {
 
 // Update Metrics
 function updateMetrics() {
-    const approvedVisitors = approvedVisitorsData.length;
-    const activeVisitors = visitorsData.filter(v => v.status === 'checked-in');
-    const todayVisitors = visitorsData.filter(v => {
-        const checkIn = new Date(v.checkInTime);
-        const today = new Date();
-        return checkIn.toDateString() === today.toDateString();
-    });
-
-    document.getElementById('approvedCount').textContent = approvedVisitors;
-    document.getElementById('activeCount').textContent = activeVisitors.length;
-    document.getElementById('todayCount').textContent = todayVisitors.length;
+    document.getElementById('approvedCount').textContent = guardSummary.approvedByHost || 0;
+    document.getElementById('activeCount').textContent = guardSummary.activeVisitors || 0;
+    document.getElementById('todayCount').textContent = guardSummary.todaysCheckIns || 0;
+    document.getElementById('checkoutCount').textContent = guardSummary.todaysCheckOuts || 0;
     document.getElementById('lastSync').textContent = new Date().toLocaleTimeString();
 }
 
@@ -331,7 +427,6 @@ function renderApprovedVisitors() {
                     <th>Purpose</th>
                     <th>Approved At</th>
                     <th>Valid Until</th>
-                    <th>Quick Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -343,9 +438,6 @@ function renderApprovedVisitors() {
                         <td>${visitor.purpose}</td>
                         <td>${visitor.approvedAt ? new Date(visitor.approvedAt).toLocaleString() : '-'}</td>
                         <td>${visitor.validUntil ? new Date(visitor.validUntil).toLocaleString() : '-'}</td>
-                        <td>
-                            <button class="btn btn-success btn-small" onclick="quickCheckIn('${visitor.phone}')">✓ Check In</button>
-                        </td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -353,20 +445,6 @@ function renderApprovedVisitors() {
     `;
     
     container.innerHTML = table;
-}
-
-// Quick Check-In from approved visitors table
-async function quickCheckIn(phone) {
-    try {
-        showStatus('Checking in visitor...', 'info');
-        const result = await apiRequest('/visitors/check-in', 'POST', { phone }, true);
-        
-        showStatus(`✓ Check-in successful: ${result.visitor.name}`, 'success');
-        loadVisitors();
-        
-    } catch (error) {
-        showStatus(`✗ Check-in failed: ${error.message}`, 'error');
-    }
 }
 
 // Check-Out Visitor

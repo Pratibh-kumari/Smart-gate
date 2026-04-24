@@ -52,7 +52,7 @@
                 <!-- Live Metrics -->
                 <div class="metrics-bar">
                     <div class="metric-item">
-                        <span class="metric-label">Approved (Waiting)</span>
+                        <span class="metric-label">Approved by Host</span>
                         <span id="approvedCount" class="metric-value">0</span>
                     </div>
                     <div class="metric-item">
@@ -62,6 +62,10 @@
                     <div class="metric-item">
                         <span class="metric-label">Today's Check-ins</span>
                         <span id="todayCount" class="metric-value">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Today's Check-outs</span>
+                        <span id="checkoutCount" class="metric-value">0</span>
                     </div>
                     <div class="metric-item">
                         <span class="metric-label">Last Updated</span>
@@ -79,23 +83,17 @@
                 <!-- Check-in Form -->
                 <div class="card">
                     <h2>Visitor Check-In</h2>
-                    <p class="section-desc">Scan QR code or enter visitor phone number</p>
-                    
-                    <form id="checkInForm">
-                        <div class="form-group">
-                            <label for="checkInPhone">Visitor Phone Number *</label>
-                            <input type="tel" id="checkInPhone" placeholder="Enter approved visitor's phone" maxlength="10" required>
-                            <small>Only approved visitors can check-in</small>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-success btn-large">✓ Check In Visitor</button>
-                    </form>
+                    <p class="section-desc">Scan visitor QR code for check-in</p>
+
+                    <div style="margin-top: 12px; text-align: center;">
+                        <button id="scanQrBtn" type="button" class="btn btn-secondary btn-large">Scan QR Code</button>
+                    </div>
                 </div>
 
                 <!-- Approved Visitors Waiting Table (NEW) -->
                 <div class="card">
                     <div class="card-header">
-                        <h2>✅ Approved Visitors (Waiting for Check-In)</h2>
+                        <h2>✅ Approved Visitors (Waiting for Entry)</h2>
                         <div class="table-filters">
                             <input type="text" id="searchApprovedInput" placeholder="Search approved visitors..." class="search-input">
                         </div>
@@ -128,6 +126,24 @@
 
             <!-- Status Messages -->
             <div id="statusBox" class="status-box"></div>
+
+            <!-- QR Scanner Modal -->
+            <div id="qrScannerModal" class="qr-scanner-modal" style="display:none;">
+                <div class="qr-scanner-dialog">
+                    <div class="qr-scanner-header">
+                        <h3>Scan Visitor QR</h3>
+                        <button id="closeQrScannerBtn" type="button" class="btn btn-small">Close</button>
+                    </div>
+                    <p class="section-desc" id="qrScanMessage">Point the camera at the visitor QR code.</p>
+                    <div class="qr-reader-wrap">
+                        <div id="qrReader" class="qr-reader"></div>
+                        <div class="qr-scan-overlay" aria-hidden="true"></div>
+                    </div>
+                    <div class="qr-scanner-actions">
+                        <button id="stopQrScannerBtn" type="button" class="btn btn-secondary">Stop Camera</button>
+                    </div>
+                </div>
+            </div>
         </main>
 
         <!-- Footer -->
@@ -136,7 +152,8 @@
         </footer>
     </div>
 
-    <script src="firebase-auth.js?v=3"></script>
-    <script src="guard.js"></script>
+    <script src="firebase-auth.js?v=4"></script>
+    <script src="assets/vendor/html5-qrcode.min.js?v=1"></script>
+    <script src="guard.js?v=2"></script>
 </body>
 </html>
