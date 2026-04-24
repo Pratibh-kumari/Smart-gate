@@ -4,7 +4,8 @@ const twilio = require('twilio');
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const fromPhone = process.env.TWILIO_PHONE_NUMBER;
-const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+const verifyServiceSid =
+  process.env.TWILIO_SERVICE_SID || process.env.TWILIO_VERIFY_SERVICE_SID;
 
 const isPlaceholderValue = (value) => {
   if (!value) return true;
@@ -22,18 +23,25 @@ const isPlaceholderValue = (value) => {
 let client = null;
 let useVerifyAPI = false;
 
+const hasValidAccountSid =
+  !!accountSid && accountSid.startsWith("AC") && !isPlaceholderValue(accountSid);
+const hasValidAuthToken = !!authToken && !isPlaceholderValue(authToken);
+const hasValidVerifyServiceSid =
+  !!verifyServiceSid && verifyServiceSid.startsWith("VA") && !isPlaceholderValue(verifyServiceSid);
+const hasValidFromPhone = !!fromPhone && !isPlaceholderValue(fromPhone);
+
 // Check if Twilio credentials are configured
-if (accountSid && authToken && !isPlaceholderValue(authToken)) {
+if (hasValidAccountSid && hasValidAuthToken) {
   client = twilio(accountSid, authToken);
   
   // Check if Verify Service is configured
-  if (verifyServiceSid) {
+  if (hasValidVerifyServiceSid) {
     useVerifyAPI = true;
     console.log('✅ Twilio Verify API initialized for OTP');
-  } else if (fromPhone) {
+  } else if (hasValidFromPhone) {
     console.log('✅ Twilio SMS service initialized');
   } else {
-    console.log('⚠️  Twilio configured but missing VERIFY_SERVICE_SID or PHONE_NUMBER');
+    console.log('⚠️  Twilio configured but missing valid SERVICE_SID (VA...) or PHONE_NUMBER');
   }
 } else {
   console.log('⚠️  Twilio credentials missing/placeholder. SMS features will use mock mode.');

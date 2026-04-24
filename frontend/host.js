@@ -185,8 +185,8 @@ function logout() {
 async function loadVisitors(silent = false) {
     try {
         if (!silent) showStatus('Loading visitors...', 'info');
-        
-        const result = await apiRequest('/visitors/pending', 'GET', null, true);
+
+        const result = await apiRequest('/visitors/host/visitors', 'GET', null, true);
         visitorsData = result.visitors || [];
         
         updateMetrics();
@@ -261,7 +261,7 @@ function renderVisitors() {
                         <td>${visitor.phone}${visitor.email ? '<br><small>' + visitor.email + '</small>' : ''}</td>
                         <td>${visitor.purpose}</td>
                         <td>${new Date(visitor.createdAt).toLocaleString()}</td>
-                        <td><span class="badge badge-${visitor.status}">${visitor.status}</span></td>
+                        <td><span class="badge badge-${visitor.status}">${visitor.status === 'checked-in' ? 'active' : visitor.status}</span></td>
                         <td>
                             ${visitor.status === 'pending' ? `
                                 <button class="btn btn-success btn-small" onclick="approveVisitor('${visitor._id}', 24)">24h</button>
@@ -270,6 +270,10 @@ function renderVisitors() {
                             ` : visitor.status === 'approved' ? `
                                 <button class="btn btn-primary btn-small" onclick="viewQRCode('${visitor._id}')">📱 View QR</button>
                                 <button class="btn btn-secondary btn-small" onclick="shareQRCode('${visitor._id}')">📤 Share</button>
+                            ` : visitor.status === 'checked-in' ? `
+                                <span class="text-success">✓ Active</span>
+                            ` : visitor.status === 'checked-out' ? `
+                                <span class="text-success">✓ Checked-out</span>
                             ` : `
                                 <span class="text-danger">✗ Rejected</span>
                             `}
@@ -301,14 +305,20 @@ async function approveVisitor(visitorId, validityHours) {
     }
 }
 
-// Reject Visitor (not implemented in backend yet, but prepared)
+// Reject Visitor
 async function rejectVisitor(visitorId) {
     if (!confirm('Are you sure you want to reject this visitor?')) {
         return;
     }
-    
-    showStatus('Reject functionality coming soon', 'info');
-    // TODO: Implement reject endpoint in backend
+
+    try {
+        showStatus('Rejecting visitor...', 'info');
+        await apiRequest(`/visitors/reject/${visitorId}`, 'PUT', null, true);
+        showStatus('✓ Visitor rejected successfully', 'success');
+        loadVisitors();
+    } catch (error) {
+        showStatus(`✗ Reject failed: ${error.message}`, 'error');
+    }
 }
 
 // View QR Code

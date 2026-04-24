@@ -565,6 +565,39 @@ th {
   text-decoration: underline;
 }
 
+.qr-card {
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.qr-pending-box {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: #f8faff;
+  padding: 18px;
+  color: var(--navy-dark);
+}
+
+.qr-display-box {
+  margin-top: 14px;
+}
+
+.visitor-qr-image {
+  width: min(320px, 100%);
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--white);
+  padding: 10px;
+}
+
+.qr-instruction {
+  margin-top: 12px;
+  font-weight: 700;
+  color: var(--navy-dark);
+}
+
 .form-group {
   margin-bottom: 24px;
 }
@@ -597,6 +630,11 @@ th {
   color: #666;
   font-size: 0.85rem;
   margin-top: 5px;
+}
+
+.field-error {
+  color: var(--danger);
+  font-weight: 700;
 }
 
 .btn-large {
@@ -791,6 +829,80 @@ th {
   font-weight: 600;
 }
 
+.qr-scanner-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 32, 76, 0.72);
+  z-index: 1200;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.qr-scanner-dialog {
+  width: min(560px, 100%);
+  background: var(--white);
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  padding: 18px;
+}
+
+.qr-scanner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.qr-scanner-header h3 {
+  margin: 0;
+  color: var(--navy-dark);
+}
+
+.qr-reader-wrap {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #000;
+}
+
+.qr-reader {
+  width: 100%;
+  min-height: 280px;
+}
+
+.qr-scan-overlay {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(62vw, 240px);
+  height: min(62vw, 240px);
+  transform: translate(-50%, -50%);
+  border: 3px solid rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+}
+
+.qr-scanner-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.qr-scan-message.info {
+  color: #555;
+}
+
+.qr-scan-message.success {
+  color: var(--success);
+}
+
+.qr-scan-message.error {
+  color: var(--danger);
+}
+
 .portal-footer {
   background: var(--navy);
   color: var(--white);
@@ -895,6 +1007,10 @@ th {
     padding: 24px;
   }
 
+  .visitor-qr-image {
+    width: min(260px, 100%);
+  }
+
   .metrics-bar {
     flex-direction: column;
     align-items: stretch;
@@ -915,5 +1031,13 @@ th {
   .data-table th,
   .data-table td {
     padding: 8px;
+  }
+
+  .qr-scanner-dialog {
+    padding: 14px;
+  }
+
+  .qr-reader {
+    min-height: 240px;
   }
 }

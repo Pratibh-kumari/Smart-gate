@@ -1,33 +1,57 @@
 const nodemailer = require('nodemailer');
 
-// Email configuration
-// Set these in environment variables or update with your credentials
-const EMAIL_USER = process.env.EMAIL_USER || 'your-email@gmail.com';
-const EMAIL_PASS = process.env.EMAIL_PASS || 'your-app-password';
+// SMTP configuration
+const SMTP_HOST = process.env.SMTP_HOST;
+const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
+const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const SMTP_REQUIRE_TLS = process.env.SMTP_REQUIRE_TLS !== 'false';
 const EMAIL_FROM = process.env.EMAIL_FROM || 'Smart Gate System <noreply@smartgate.com>';
 
-// Create transporter using Testmail.app
-const transporter = nodemailer.createTransport({
-  host: '104.26.4.155', // smtp.testmail.app hardcoded bypass
-  port: 587,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: 'd0fd37fa-cbe3-402e-8814-2bf3c05a17b4',
-    pass: 'd0fd37fa-cbe3-402e-8814-2bf3c05a17b4'
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-});
+const hasSmtpConfig = Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS);
 
-// Test email configuration
-transporter.verify((error, success) => {
-  if (error) {
-    console.log('⚠️  Testmail service not configured:', error.message);
-  } else {
-    console.log('✅ Testmail service ready (Namespace: gp6f5)');
+const transporter = hasSmtpConfig
+  ? nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_SECURE,
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASS
+      },
+      requireTLS: SMTP_REQUIRE_TLS
+    })
+  : null;
+
+if (!hasSmtpConfig) {
+  console.warn('SMTP is not fully configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SECURE in backend/.env.');
+} else {
+  // Verify SMTP connection at startup to fail fast on invalid credentials.
+  transporter.verify((error) => {
+    if (error) {
+      console.error('SMTP connection failed:', error.message);
+    } else {
+      console.log('SMTP service is ready.');
+    }
+  });
+}
+
+async function sendMail(mailOptions, logLabel) {
+  if (!transporter) {
+    const error = 'SMTP is not configured';
+    console.error(`${logLabel} failed: ${error}`);
+    return { success: false, error };
   }
-});
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error(`${logLabel} failed:`, error.message);
+    return { success: false, error: error.message };
+  }
+}
 
 /**
  * Send verification email
@@ -78,14 +102,11 @@ async function sendVerificationEmail(email, name, verificationToken) {
     `
   };
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log('✉️  Verification email sent to:', email);
-    return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error('❌ Failed to send verification email:', error.message);
-    return { success: false, error: error.message };
+  const result = await sendMail(mailOptions, 'Verification email');
+  if (result.success) {
+    console.log('Verification email sent to:', email);
   }
+  return result;
 }
 
 /**
@@ -149,14 +170,11 @@ async function sendQRCodeEmail(visitorEmail, visitorName, qrCodeDataURL, visitDe
     `
   };
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log('✉️  QR code email sent to:', visitorEmail);
-    return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error('❌ Failed to send QR code email:', error.message);
-    return { success: false, error: error.message };
+  const result = await sendMail(mailOptions, 'QR code email');
+  if (result.success) {
+    console.log('QR code email sent to:', visitorEmail);
   }
+  return result;
 }
 
 /**
@@ -208,14 +226,11 @@ async function sendPasswordResetEmail(email, name, resetToken) {
     `
   };
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log('✉️  Password reset email sent to:', email);
-    return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error('❌ Failed to send password reset email:', error.message);
-    return { success: false, error: error.message };
+  const result = await sendMail(mailOptions, 'Password reset email');
+  if (result.success) {
+    console.log('Password reset email sent to:', email);
   }
+  return result;
 }
 
 module.exports = {

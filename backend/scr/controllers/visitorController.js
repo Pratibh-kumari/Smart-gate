@@ -1,5 +1,6 @@
 const Visitor = require("../models/Visitor");
 const QRCode = require("qrcode");
+const crypto = require("crypto");
 const { sendQRCodeEmail } = require("../services/emailService");
 const {
   formatPhone,
@@ -8,10 +9,56 @@ const {
   useVerifyAPI,
 } = require("../services/smsService");
 
+const DEFAULT_QR_VALIDITY_HOURS = 6;
+const PHONE_REGEX = /^\d{10}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizePhone(phone) {
+  return String(phone || "").trim();
+}
+
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function isValidPhone(phone) {
+  return PHONE_REGEX.test(phone);
+}
+
+function isValidEmail(email) {
+  return EMAIL_REGEX.test(email);
+}
+
+async function generateUniqueQrToken() {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const token = crypto.randomBytes(32).toString("hex");
+    const existing = await Visitor.findOne({ qrToken: token }).select("_id");
+    if (!existing) {
+      return token;
+    }
+  }
+
+  throw new Error("Unable to generate unique QR token");
+}
+
 // Register visitor
 exports.registerVisitor = async (req, res) => {
   try {
-    const { name, phone, email, host, purpose } = req.body;
+    const { name, host, purpose } = req.body;
+    const phone = normalizePhone(req.body.phone);
+    const email = normalizeEmail(req.body.email);
+
+    if (!isValidPhone(phone)) {
+      return res.status(400).json({ message: "Enter a valid 10-digit phone number" });
+    }
+
+    if (email && !isValidEmail(email)) {
+      return res.status(400).json({ message: "Enter a valid email address" });
+    }
+
+    if (!String(name || "").trim() || !String(host || "").trim() || !String(purpose || "").trim()) {
+      return res.status(400).json({ message: "Name, host and purpose are required" });
+    }
 
     const formattedPhone = formatPhone(phone);
 
@@ -107,10 +154,20 @@ exports.sendOtp = async (req, res) => {
   }
 };
 
-// Verify OTP and generate QR
+// Verify OTP
 exports.verifyOtp = async (req, res) => {
   try {
-    const { phone, otp } = req.body;
+    const phone = normalizePhone(req.body.phone);
+    const otp = String(req.body.otp || "").trim();
+
+    if (!isValidPhone(phone)) {
+      return res.status(400).json({ message: "Enter a valid 10-digit phone number" });
+    }
+
+    if (!/^\d{4,8}$/.test(otp)) {
+      return res.status(400).json({ message: "Invalid OTP format" });
+    }
+
     console.log('--- OTP Verification Request ---');
     console.log('Original Phone:', phone);
     console.log('OTP Received:', otp);
@@ -182,23 +239,76 @@ exports.getPendingVisitors = async (req, res) => {
   }
 };
 
+// Get host dashboard visitors (all relevant statuses)
+exports.getHostVisitors = async (req, res) => {
+  try {
+    const allowedStatuses = ["pending", "approved", "rejected", "checked-in", "checked-out"];
+    const query = {};
+
+    if (req.query.status && allowedStatuses.includes(req.query.status)) {
+      query.status = req.query.status;
+    }
+
+    const visitors = await Visitor.find(query).sort({ createdAt: -1 });
+    res.json({ visitors });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Reject visitor (host)
+exports.rejectVisitor = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const visitor = await Visitor.findById(id);
+    if (!visitor) {
+      return res.status(404).json({ message: "Visitor not found" });
+    }
+
+    if (visitor.status !== "pending") {
+      return res.status(400).json({ message: "Only pending visitors can be rejected" });
+    }
+
+    visitor.status = "rejected";
+    await visitor.save();
+
+    return res.json({ message: "Visitor rejected successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Approve visitor (host)
 exports.approveVisitor = async (req, res) => {
   try {
-    const { visitorId, validityHours = 24 } = req.body;
+    const visitorId = req.params.id || req.body.visitorId;
+    const { validityHours = DEFAULT_QR_VALIDITY_HOURS } = req.body;
+
+    if (!visitorId) {
+      return res.status(400).json({ message: "visitorId is required" });
+    }
 
     const visitor = await Visitor.findById(visitorId);
     if (!visitor) {
       return res.status(404).json({ message: "Visitor not found" });
     }
 
+    if (!visitor.isVerified || visitor.status !== "pending") {
+      return res.status(400).json({
+        message: "Visitor must complete OTP verification before approval",
+      });
+    }
+
     visitor.status = "approved";
     visitor.approvedAt = new Date();
     visitor.validUntil = new Date(Date.now() + validityHours * 60 * 60 * 1000);
+    visitor.qrToken = await generateUniqueQrToken();
+    visitor.qrUsed = false;
+    visitor.qrCreatedAt = new Date();
 
-    // Generate QR code
-    const qrData = `VISITOR:${visitor._id}`;
-    const qrCode = await QRCode.toDataURL(qrData);
+    // Encode only secure token in QR payload
+    const qrCode = await QRCode.toDataURL(visitor.qrToken);
     visitor.qrCode = qrCode;
 
     await visitor.save();
@@ -226,7 +336,94 @@ exports.approveVisitor = async (req, res) => {
 
     res.json({
       message: "Visitor approved successfully",
-      visitor,
+      visitor: {
+        id: visitor._id,
+        status: visitor.status,
+        qrCreatedAt: visitor.qrCreatedAt,
+        validUntil: visitor.validUntil,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get visitor QR by visitor id
+exports.getVisitorQr = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const visitor = await Visitor.findById(id).select("status qrCode qrUsed qrCreatedAt validUntil");
+
+    if (!visitor) {
+      return res.status(404).json({ message: "Visitor not found" });
+    }
+
+    if (visitor.status === "checked-in" && visitor.qrUsed) {
+      return res.status(200).json({
+        status: visitor.status,
+        qrCode: null,
+        qrUsed: true,
+        entrySuccessful: true,
+        message: "Welcome to RRU. Entry Successful.",
+      });
+    }
+
+    if (visitor.status !== "approved") {
+      return res.status(200).json({
+        status: visitor.status,
+        qrCode: null,
+        qrUsed: visitor.qrUsed,
+        message: "Visitor is not approved yet",
+      });
+    }
+
+    return res.status(200).json({
+      status: visitor.status,
+      qrCode: visitor.qrCode,
+      qrUsed: visitor.qrUsed,
+      qrCreatedAt: visitor.qrCreatedAt,
+      validUntil: visitor.validUntil,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Scan one-time QR token (guard)
+exports.scanQr = async (req, res) => {
+  try {
+    const { qrToken } = req.body;
+
+    if (!qrToken) {
+      return res.status(400).json({ message: "qrToken is required" });
+    }
+
+    const visitor = await Visitor.findOne({ qrToken });
+    if (!visitor) {
+      return res.status(403).json({ message: "Access Denied" });
+    }
+
+    if (visitor.status !== "approved") {
+      return res.status(403).json({ message: "Access Denied" });
+    }
+
+    if (visitor.qrUsed) {
+      return res.status(403).json({ message: "Access Denied" });
+    }
+
+    if (visitor.validUntil && visitor.validUntil < new Date()) {
+      return res.status(403).json({ message: "Access Denied" });
+    }
+
+    visitor.qrUsed = true;
+    visitor.status = "checked-in";
+    visitor.checkInTime = new Date();
+    await visitor.save();
+
+    return res.status(200).json({
+      message: "Access Granted",
+      visitorId: visitor._id,
+      checkedInAt: visitor.checkInTime,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -282,6 +479,32 @@ exports.getActiveVisitors = async (req, res) => {
   try {
     const visitors = await Visitor.find({ status: "checked-in" }).sort({ checkInTime: -1 });
     res.json({ visitors });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get guard summary metrics
+exports.getGuardSummary = async (req, res) => {
+  try {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const [approvedByHost, activeVisitors, todaysCheckIns, todaysCheckOuts] = await Promise.all([
+      Visitor.countDocuments({ status: "approved" }),
+      Visitor.countDocuments({ status: "checked-in" }),
+      Visitor.countDocuments({ checkInTime: { $gte: start, $lte: end } }),
+      Visitor.countDocuments({ checkOutTime: { $gte: start, $lte: end } }),
+    ]);
+
+    return res.json({
+      approvedByHost,
+      activeVisitors,
+      todaysCheckIns,
+      todaysCheckOuts,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -21,9 +21,9 @@
     "firebase-admin": "^13.7.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.1",
-    "nodemailer": "^8.0.1",
+    "nodemailer": "^8.0.5",
     "qrcode": "^1.5.4",
-    "twilio": "^5.12.1"
+    "twilio": "^5.13.1"
   },
   "devDependencies": {
     "newman": "^6.2.1"

@@ -79,7 +79,7 @@
                 <!-- Pending Approvals Table -->
                 <div class="card">
                     <div class="card-header">
-                        <h2>Pending Visitor Approvals</h2>
+                        <h2>Visitor Requests</h2>
                         <div class="table-filters">
                             <input type="text" id="searchInput" placeholder="Search by name, phone, or purpose..." class="search-input">
                             <select id="statusFilter" class="filter-select">
@@ -87,6 +87,8 @@
                                 <option value="pending" selected>Pending</option>
                                 <option value="approved">Approved</option>
                                 <option value="rejected">Rejected</option>
+                                <option value="checked-in">Active</option>
+                                <option value="checked-out">Checked-out</option>
                             </select>
                         </div>
                     </div>
@@ -107,7 +109,7 @@
         </footer>
     </div>
 
-    <script src="firebase-auth.js?v=3"></script>
-    <script src="host.js"></script>
+    <script src="firebase-auth.js?v=4"></script>
+    <script src="host.js?v=2"></script>
 </body>
 </html>
